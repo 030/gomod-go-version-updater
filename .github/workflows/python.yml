@@ -1,17 +1,19 @@
-name: python
+---
+name: Python
 'on': push
+permissions:
+  contents: write
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  MCVS-python-action:
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v4.2.1
-      - uses: actions/setup-python@v5.2.0
+      #
+      #
+      #
+      #
+      #
+      - uses: actions/checkout@v4.1.1
+      - uses: 030/mcvs-python-action@1-2-install-python-run-pytest
         with:
-          python-version: 3.9.18
-          cache: 'pip'
-      - name: Install PIP packages defined in requirements.txt
-        run: |
-          pip install -r requirements.txt
-      - name: Run tests
-        run: |
-          pytest --cov=main test.py --verbose --capture=no --cov-report term-missing
+          pyinstaller-binary-name: gomod-go-version-updater
+          token: ${{ secrets.GITHUB_TOKEN }}

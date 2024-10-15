@@ -4,6 +4,14 @@ The rationale for this action is that
 [Dependabot cannot](https://github.com/dependabot/dependabot-core/issues/9057)
 update the go version that is defined in a `go.mod` file.
 
+## Development
+
+```zsh
+pip install pyinstaller==v6.10.0
+pyinstaller --onefile main.py --name gomod-go-version-updater
+./dist/gomod-go-version-updater
+```
+
 ## Usage
 
 1. To use this action, ensure that:

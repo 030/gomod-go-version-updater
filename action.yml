@@ -22,17 +22,11 @@ runs:
     - uses: actions/checkout@v4.2.1
       with:
         ref: main
+    # yamllint disable rule:line-length
     - name: set branch name
       run: |
         echo "GOMOD_GO_VERSION_UPDATER_LABEL=gomod-go-version-updater" >> $GITHUB_ENV
         echo "GOMOD_GO_VERSION_UPDATER_ACTION_BRANCH=update-go-version-in-go-mod-file" >> $GITHUB_ENV
-      shell: bash
-    - uses: actions/setup-python@v5.2.0
-      with:
-        python-version: 3.9.18
-    - name: Install dependencies
-      run: |
-        pip install pytest pytest-cov requests
       shell: bash
     - name: Create label
       run: |
@@ -45,14 +39,18 @@ runs:
         git fetch -p -P
         git checkout -b ${GOMOD_GO_VERSION_UPDATER_ACTION_BRANCH}
 
-        python --version
-        python3 --version
+        echo "github.ref_name: ${{ github.ref_name }}"
+
+        export GOMOD_GO_VERSION_UPDATER_FILE=${GOMOD_GO_VERSION_UPDATER_LABEL}
+        curl -L https://github.com/030/gomod-go-version-updater-action/releases/download/${{ github.ref_name }}/${GOMOD_GO_VERSION_UPDATER_FILE} \
+          -o ${GOMOD_GO_VERSION_UPDATER_FILE}
+        chmod +x ${GOMOD_GO_VERSION_UPDATER_FILE}
 
         if [ -n "${{ inputs.gomod-go-version-updater-action-log-level }}" ]; then
           export GOMOD_GO_VERSION_UPDATER_ACTION_LOGGING_LEVEL=${{ inputs.gomod-go-version-updater-action-log-level }}
           echo "GOMOD_GO_VERSION_UPDATER_ACTION_LOGGING_LEVEL: ${GOMOD_GO_VERSION_UPDATER_ACTION_LOGGING_LEVEL}"
         fi
-        export GOMOD_GO_VERSION_UPDATER_ACTION_OUTPUT=$(python ${{ github.action_path }}/main.py 2>&1)
+        export GOMOD_GO_VERSION_UPDATER_ACTION_OUTPUT=$(./${GOMOD_GO_VERSION_UPDATER_FILE} 2>&1)
         echo "GOMOD_GO_VERSION_UPDATER_ACTION_OUTPUT: ${GOMOD_GO_VERSION_UPDATER_ACTION_OUTPUT}"
 
         export GOMOD_GO_VERSION_UPDATER_ACTION_NEW_GOLANG_VERSION_OUTPUT=$(echo ${GOMOD_GO_VERSION_UPDATER_ACTION_OUTPUT} |\
@@ -63,17 +61,25 @@ runs:
         export GOMOD_GO_VERSION_UPDATER_ACTION_MESSAGE="build(deps): ${GOMOD_GO_VERSION_UPDATER_ACTION_NEW_GOLANG_VERSION_OUTPUT}"
         echo "GOMOD_GO_VERSION_UPDATER_ACTION_MESSAGE: ${GOMOD_GO_VERSION_UPDATER_ACTION_MESSAGE}"
 
-        if [ -n "$(git status --porcelain)" ]; then echo "There are uncommitted changes."; else echo "No changes to commit." && exit 0; fi
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "There are uncommitted changes."
+        else
+          echo "No changes to commit."
+          exit 0
+        fi
 
         echo "git add..."
         git add go.mod
 
         echo "git config user..."
         git config user.name github-actions[bot]
-        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+        git config user.email \
+          41898282+github-actions[bot]@users.noreply.github.com
 
         echo "git commit..."
-        if ! git commit -m "${GOMOD_GO_VERSION_UPDATER_ACTION_MESSAGE}"; then git commit --amend --no-edit; fi
+        if ! git commit -m "${GOMOD_GO_VERSION_UPDATER_ACTION_MESSAGE}"; then
+          git commit --amend --no-edit
+        fi
 
         echo "git push..."
         git push origin ${GOMOD_GO_VERSION_UPDATER_ACTION_BRANCH} -f
@@ -98,23 +104,32 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ github.token }}
+    # yamllint enable rule:line-length
     - uses: actions/setup-go@v5.0.2
       with:
         go-version-file: 'go.mod'
         cache: false
+    # yamllint disable rule:line-length
     - run: |
-        git config --global url.https://${{ inputs.github-token-for-downloading-private-go-modules }}@github.com/.insteadOf https://github.com/
+        git config \
+          --global url.https://${{ inputs.github-token-for-downloading-private-go-modules }}@github.com/.insteadOf https://github.com/
       shell: bash
       if: ${{ inputs.github-token-for-downloading-private-go-modules != '' }}
+    # yamllint enable rule:line-length
     - name: go mod tidy
       run: |
         go mod tidy
       shell: bash
     - name: commit and force push if needed
       run: |
-        if [ -n "$(git status --porcelain)" ]; then echo "There are uncommitted changes."; else echo "No changes to commit." && exit 0; fi
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "There are uncommitted changes."
+        else
+          echo "No changes to commit."
+          exit 0
+        fi
 
-        git add .
+        git add . -- ":!${GOMOD_GO_VERSION_UPDATER_LABEL}"
         git commit --amend --no-edit
         git push origin ${GOMOD_GO_VERSION_UPDATER_ACTION_BRANCH} -f
       shell: bash
