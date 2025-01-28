@@ -27,7 +27,7 @@ runs:
         echo "GOMOD_GO_VERSION_UPDATER_LABEL=gomod-go-version-updater" >> $GITHUB_ENV
         echo "GOMOD_GO_VERSION_UPDATER_ACTION_BRANCH=update-go-version-in-go-mod-file" >> $GITHUB_ENV
       shell: bash
-    - uses: actions/setup-python@v5.3.0
+    - uses: actions/setup-python@v5.4.0
       with:
         python-version: 3.9.18
     - name: Install dependencies
